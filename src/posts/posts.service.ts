@@ -9,7 +9,9 @@ import {
 } from '@aws-sdk/client-s3';
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 import crypto from 'crypto';
-
+import { InjectRepository } from '@nestjs/typeorm';
+import { Post } from './entities/post.entity';
+import { Repository } from 'typeorm';
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
 const AWS_REGION = process.env.AWS_REGION;
@@ -26,13 +28,23 @@ const s3 = new S3Client({
 
 @Injectable()
 export class PostsService {
+  constructor(
+    @InjectRepository(Post) private readonly postRepository: Repository<Post>,
+  ) {}
+
   randomImageName(bytes = 32) {
     const random = crypto.randomBytes(bytes).toString('hex');
     return random;
   }
 
-  create(createPostDto: CreatePostDto) {
-    return 'This action adds a new post';
+  async create(createPostDto: CreatePostDto, file: Express.Multer.File) {
+    const post = this.postRepository.create(createPostDto);
+    await this.uploadImage(file);
+    return await this.postRepository.save(post);
+  }
+
+  async addLike(id: string) {
+    return `This action adds a like to a #${id} post`;
   }
 
   async uploadImage(file: Express.Multer.File) {
@@ -46,11 +58,12 @@ export class PostsService {
     const command = new PutObjectCommand(params);
 
     await s3.send(command);
-    return `This action uploads an image`;
   }
 
   async findAll() {
-    const posts = [];
+    const posts = await this.postRepository.find();
+
+    const postsWithUrl = [];
 
     for (const post of posts) {
       const getOnejectParams = {
@@ -59,32 +72,45 @@ export class PostsService {
       };
       const command = new GetObjectCommand(getOnejectParams);
       const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
-      post.url = url;
+      const postWithUrl = {
+        ...post,
+        url,
+      };
+      postsWithUrl.push(postWithUrl);
     }
-    return `This action returns all posts`;
+    return postsWithUrl;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} post`;
+  async findOne(id: string) {
+    const post = await this.postRepository.findOne({ where: { id } });
+
+    const getOnejectParams = {
+      Bucket: BUCKET_NAME,
+      Key: post.imageName,
+    };
+    const command = new GetObjectCommand(getOnejectParams);
+    const url = getSignedUrl(s3, command, { expiresIn: 3600 });
+
+    return { ...post, url };
   }
 
-  update(id: number, updatePostDto: UpdatePostDto) {
-    return `This action updates a #${id} post`;
+  async update(id: string, updatePostDto: UpdatePostDto) {
+    return await this.postRepository.update(id, updatePostDto);
   }
 
-  async remove(id: number) {
-    // const post = this.findOne(id);
-    // if (!post) {
-    //   return 'Post not found';
-    // }
+  async remove(id: string) {
+    const post = await this.findOne(id);
+    if (!post) {
+      return 'Post not found';
+    }
 
-    // const deleteObjectParams = {
-    //   Bucket: BUCKET_NAME,
-    //   Key: post.imageName,
-    // };
-    // const command = new DeleteObjectCommand(deleteObjectParams);
-    // await s3.send(command);
+    const deleteObjectParams = {
+      Bucket: BUCKET_NAME,
+      Key: post.imageName,
+    };
+    const command = new DeleteObjectCommand(deleteObjectParams);
+    await s3.send(command);
 
-    return `This action removes a #${id} post`;
+    return await this.postRepository.delete(id);
   }
 }
