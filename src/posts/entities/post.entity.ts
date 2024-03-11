@@ -1,9 +1,11 @@
+import { User } from 'src/users/entities/user.entity';
 import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
   BeforeInsert,
   BeforeUpdate,
+  ManyToOne,
 } from 'typeorm';
 
 @Entity()
@@ -16,6 +18,9 @@ export class Post {
 
   @Column({ default: 0 })
   likes: number;
+
+  @ManyToOne((type) => User, (user) => user.posts)
+  user: User;
 
   @Column()
   createdAt: Date;
