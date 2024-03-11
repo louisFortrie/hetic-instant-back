@@ -24,6 +24,9 @@ export class User {
   @Column({ nullable: false })
   password: string;
 
+  @Column({ nullable: false, default: 'user' })
+  role: string;
+
   @OneToMany((type) => Post, (post) => post.user)
   posts: Post[];
 

@@ -44,7 +44,12 @@ export class PostsService {
   }
 
   async addLike(id: string) {
-    return `This action adds a like to a #${id} post`;
+    const post = await this.postRepository.findOne({ where: { id } });
+    if (!post) {
+      throw new Error(`Post with id ${id} not found.`);
+    }
+    post.likes += 1;
+    return await this.postRepository.save(post);
   }
 
   async uploadImage(file: Express.Multer.File) {
