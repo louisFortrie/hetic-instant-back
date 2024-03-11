@@ -8,32 +8,29 @@ import {
   DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
-import crypto from 'crypto';
+import { randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
 import { Repository } from 'typeorm';
-
-const BUCKET_NAME = process.env.BUCKET_NAME;
-const AWS_REGION = process.env.AWS_REGION;
-const AWS_ACCESS_KEY = process.env.AWS_ACCESS_KEY;
-const AWS_SECRET_KEY = process.env.AWS_SECRET_KEY;
-
-const s3 = new S3Client({
-  region: AWS_REGION,
-  credentials: {
-    accessKeyId: AWS_ACCESS_KEY,
-    secretAccessKey: AWS_SECRET_KEY,
-  },
-});
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
+    private readonly configService: ConfigService,
   ) {}
 
+  private readonly s3 = new S3Client({
+    region: this.configService.getOrThrow('AWS_REGION'),
+    credentials: {
+      accessKeyId: this.configService.getOrThrow('AWS_ACCESS_KEY'),
+      secretAccessKey: this.configService.getOrThrow('AWS_SECRET_KEY'),
+    },
+  });
+
   randomImageName(bytes = 32) {
-    const random = crypto.randomBytes(bytes).toString('hex');
+    const random = randomBytes(bytes).toString('hex');
     return random;
   }
 
@@ -53,8 +50,10 @@ export class PostsService {
   }
 
   async uploadImage(file: Express.Multer.File) {
+    console.log('bucket name is', this.configService.getOrThrow('BUCKET_NAME'));
+
     const params = {
-      Bucket: BUCKET_NAME,
+      Bucket: this.configService.getOrThrow('BUCKET_NAME'),
       Key: this.randomImageName(),
       Body: file.buffer,
       ContentType: file.mimetype,
@@ -62,7 +61,7 @@ export class PostsService {
 
     const command = new PutObjectCommand(params);
 
-    await s3.send(command);
+    await this.s3.send(command);
   }
 
   async findAll() {
@@ -72,11 +71,11 @@ export class PostsService {
 
     for (const post of posts) {
       const getOnejectParams = {
-        Bucket: BUCKET_NAME,
+        Bucket: this.configService.getOrThrow('BUCKET_NAME'),
         Key: post.imageName,
       };
       const command = new GetObjectCommand(getOnejectParams);
-      const url = await getSignedUrl(s3, command, { expiresIn: 3600 });
+      const url = await getSignedUrl(this.s3, command, { expiresIn: 3600 });
       const postWithUrl = {
         ...post,
         url,
@@ -90,11 +89,11 @@ export class PostsService {
     const post = await this.postRepository.findOne({ where: { id } });
 
     const getOnejectParams = {
-      Bucket: BUCKET_NAME,
+      Bucket: this.configService.getOrThrow('BUCKET_NAME'),
       Key: post.imageName,
     };
     const command = new GetObjectCommand(getOnejectParams);
-    const url = getSignedUrl(s3, command, { expiresIn: 3600 });
+    const url = getSignedUrl(this.s3, command, { expiresIn: 3600 });
 
     return { ...post, url };
   }
@@ -110,11 +109,11 @@ export class PostsService {
     }
 
     const deleteObjectParams = {
-      Bucket: BUCKET_NAME,
+      Bucket: this.configService.getOrThrow('BUCKET_NAME'),
       Key: post.imageName,
     };
     const command = new DeleteObjectCommand(deleteObjectParams);
-    await s3.send(command);
+    await this.s3.send(command);
 
     return await this.postRepository.delete(id);
   }

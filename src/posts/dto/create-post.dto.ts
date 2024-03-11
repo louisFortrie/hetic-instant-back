@@ -1,1 +1,4 @@
-export class CreatePostDto {}
+export class CreatePostDto {
+  imageName: string;
+  userId: string;
+}

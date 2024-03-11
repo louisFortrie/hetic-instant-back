@@ -21,13 +21,16 @@ import { JwtGuard } from 'src/auth/guards/jwt-auth.guard';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
-  @UseGuards(JwtGuard)
+  // @UseGuards(JwtGuard)
   @Post()
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   create(
-    @Body() createPostDto: CreatePostDto,
     @UploadedFile() file: Express.Multer.File,
+    @Body('data') createPostData: string,
   ) {
+    const createPostDto: CreatePostDto = JSON.parse(createPostData);
+    console.log(createPostDto.imageName, file);
+
     return this.postsService.create(createPostDto, file);
   }
 

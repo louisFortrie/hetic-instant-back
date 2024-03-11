@@ -9,16 +9,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { config } from 'ormconfig';
 import { MulterModule } from '@nestjs/platform-express';
 import { AuthModule } from './auth/auth.module';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
     UsersModule,
     EventsModule,
     CommentsModule,
     PostsModule,
     TypeOrmModule.forRoot(config),
     MulterModule.register(),
-    AuthModule
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
