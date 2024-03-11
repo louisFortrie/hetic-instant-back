@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
-import dotenv from 'dotenv';
 import {
   PutObjectCommand,
   S3Client,
@@ -11,7 +10,6 @@ import {
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 import crypto from 'crypto';
 
-dotenv.config();
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
 const AWS_REGION = process.env.AWS_REGION;
@@ -75,17 +73,17 @@ export class PostsService {
   }
 
   async remove(id: number) {
-    const post = this.findOne(id);
-    if (!post) {
-      return 'Post not found';
-    }
+    // const post = this.findOne(id);
+    // if (!post) {
+    //   return 'Post not found';
+    // }
 
-    const deleteObjectParams = {
-      Bucket: BUCKET_NAME,
-      Key: post.imageName,
-    };
-    const command = new DeleteObjectCommand(deleteObjectParams);
-    await s3.send(command);
+    // const deleteObjectParams = {
+    //   Bucket: BUCKET_NAME,
+    //   Key: post.imageName,
+    // };
+    // const command = new DeleteObjectCommand(deleteObjectParams);
+    // await s3.send(command);
 
     return `This action removes a #${id} post`;
   }

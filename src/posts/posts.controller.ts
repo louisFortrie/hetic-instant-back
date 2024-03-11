@@ -13,16 +13,14 @@ import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
-import multer from 'multer';
-
-const storage = multer.memoryStorage();
+import { memoryStorage } from 'multer';
 
 @Controller('posts')
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
   @Post()
-  @UseInterceptors(FileInterceptor('file', { storage: storage }))
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
   create(
     @Body() createPostDto: CreatePostDto,
     @UploadedFile() file: Express.Multer.File,
