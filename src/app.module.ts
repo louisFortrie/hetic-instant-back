@@ -8,6 +8,7 @@ import { PostsModule } from './posts/posts.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { config } from 'ormconfig';
 import { MulterModule } from '@nestjs/platform-express';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -16,7 +17,8 @@ import { MulterModule } from '@nestjs/platform-express';
     CommentsModule,
     PostsModule,
     TypeOrmModule.forRoot(config),
-    MulterModule.register()
+    MulterModule.register(),
+    AuthModule
   ],
   controllers: [AppController],
   providers: [AppService],
