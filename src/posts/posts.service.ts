@@ -65,7 +65,7 @@ export class PostsService {
   }
 
   async findAll() {
-    const posts = await this.postRepository.find();
+    const posts = await this.postRepository.find({ order: { likes: 'DESC' } });
 
     const postsWithUrl = [];
 
