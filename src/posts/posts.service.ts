@@ -13,12 +13,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Post } from './entities/post.entity';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class PostsService {
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
     private readonly configService: ConfigService,
+    private readonly userService: UsersService,
   ) {}
 
   private readonly s3 = new S3Client({
@@ -35,8 +37,13 @@ export class PostsService {
   }
 
   async create(createPostDto: CreatePostDto, file: Express.Multer.File) {
-    const post = this.postRepository.create(createPostDto);
-    await this.uploadImage(file);
+    const user = await this.userService.findOne(createPostDto.userId);
+
+    const newPost = new Post();
+    newPost.imageName = await this.uploadImage(file);
+    newPost.user = user;
+
+    const post = this.postRepository.create(newPost);
     return await this.postRepository.save(post);
   }
 
@@ -51,10 +58,10 @@ export class PostsService {
 
   async uploadImage(file: Express.Multer.File) {
     console.log('bucket name is', this.configService.getOrThrow('BUCKET_NAME'));
-
+    const imageName = this.randomImageName();
     const params = {
       Bucket: this.configService.getOrThrow('BUCKET_NAME'),
-      Key: this.randomImageName(),
+      Key: imageName,
       Body: file.buffer,
       ContentType: file.mimetype,
     };
@@ -62,6 +69,7 @@ export class PostsService {
     const command = new PutObjectCommand(params);
 
     await this.s3.send(command);
+    return imageName;
   }
 
   async findAll() {

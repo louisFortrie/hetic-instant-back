@@ -6,7 +6,7 @@ import { Comment } from './src/comments/entities/comment.entity';
 export const config: PostgresConnectionOptions = {
   type: 'postgres',
   host: 'localhost',
-  port: 5433,
+  port: 5434,
   username: 'postgres',
   password: 'postgres',
   database: 'hetic-instant',

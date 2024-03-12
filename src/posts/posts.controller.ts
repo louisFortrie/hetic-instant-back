@@ -29,7 +29,6 @@ export class PostsController {
     @Body('data') createPostData: string,
   ) {
     const createPostDto: CreatePostDto = JSON.parse(createPostData);
-    console.log(createPostDto.imageName, file);
 
     return this.postsService.create(createPostDto, file);
   }
