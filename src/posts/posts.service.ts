@@ -42,6 +42,7 @@ export class PostsService {
     const newPost = new Post();
     newPost.imageName = await this.uploadImage(file);
     newPost.user = user;
+    newPost.title = createPostDto.title;
 
     const post = this.postRepository.create(newPost);
     return await this.postRepository.save(post);

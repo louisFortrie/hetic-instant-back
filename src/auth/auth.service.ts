@@ -12,6 +12,7 @@ export class AuthService {
 
   async validateUser(email: string, password: string) {
     const user = await this.userService.findOneWithEmail(email);
+    if (!user) return null;
     console.log(user, 'user');
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
@@ -32,7 +33,7 @@ export class AuthService {
     console.log(isUserValid, 'isUserValid');
 
     if (!isUserValid) {
-      return new UnauthorizedException();
+      return new UnauthorizedException('Invalid credentials');
     }
 
     const payload = {

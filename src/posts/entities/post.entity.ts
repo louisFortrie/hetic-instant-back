@@ -13,6 +13,9 @@ export class Post {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ nullable: true })
+  title: string;
+
   @Column({ nullable: false, unique: true })
   imageName: string;
 
